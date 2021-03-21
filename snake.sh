@@ -164,8 +164,8 @@ until [ $endGame -ne 0 ]; do
     read -sd " " -t $(echo "e(-${#snakeParts[@]} / $size ^ 2) + 0.1" | bc -l) dirs
     setDir $dirs
 
-    doSnake
     doFood
+    doSnake
 done
 drawScore
 drawWin $endGame
