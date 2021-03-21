@@ -126,7 +126,7 @@ doSnake () {
         [ $x -lt 0 ] && x=$((x + size)) || x=$((x % size))
         [ $y -lt 0 ] && y=$((y + size)) || y=$((y % size))
     else
-        if [ $x -eq -1 ] || [ $x -eq $((size + 1)) ] || [ $y -eq -1 ] || [ $y -eq $((size + 1)) ]; then endGame=2; fi
+        if [ $x -eq -1 ] || [ $x -eq $size ] || [ $y -eq -1 ] || [ $y -eq $size ]; then endGame=2; fi
     fi
 
     snakeParts[0]=c"$x,$y"c
