@@ -5,7 +5,6 @@ cd "${0%/*}"
 stty -echo
 
 size=$1
-score=0  # TODO: Unneeded, just use length of $snakeParts
 food=($((size * 2 / 3)) $((size / 2)))
 snakeRender=0   # 0: Gradient, 1: Striped
 
@@ -47,8 +46,11 @@ grow () {
 }
 
 newFood () {
-    food[0]=$((RANDOM % size))
-    food[1]=$((RANDOM % size))
+    until ! [[ ${snakeParts[@]} =~ $foodCoords ]]; do
+        food[0]=$((RANDOM % size))
+        food[1]=$((RANDOM % size))
+        foodCoords="$((food[0])),$((food[1]))"
+    done
 }
 
 echoChar () {  # $1: index
@@ -66,6 +68,18 @@ echoChar () {  # $1: index
 getCoords () {  # $1: x,y
     x=$(echo $1 | grep -Eo "^[0-9]+")
     y=$(echo $1 | grep -Eo "[0-9]+$")
+}
+
+tryWin () {
+    if [ ${#snakeParts[@]} -eq $((size * size)) ]; then
+        halfY=$((size / 2 + 1))
+        [ $((halfY - 3)) -lt 1 ] && halfX=1 || halfX=$((halfY - 3))
+        tput cup $halfY $((halfX * 2))
+        echo -n "You Win!"
+        tput cup $((size + 2)) 0
+        stty echo
+        exit
+    fi
 }
 
 drawFrame () {
@@ -86,16 +100,13 @@ drawFrame () {
 }
 
 drawScore () {
-    # TODO: Everything
-    scoreTxt="╡$score╞"
-    spaceCount=$(($size * 2 - ${#scoreTxt}))
-    for (( space=0; space <= spaceCount; space++ )); do echo -n "═"; done
+    scoreTxt="╡$((${#snakeParts[@]} - 2))╞"
+    spaceCount=$(($size * 2 - ${#scoreTxt} + 1))
+    tput cup 0 $spaceCount
     echo $scoreTxt
 }
 
 doSnake () {
-    tput cup 0 0
-    echo -n ${#snakeParts[@]}
     for (( bIndex=$((${#snakeParts[@]} - 1)); bIndex > 0; bIndex-- )); do
         if [ $bIndex -eq $((${#snakeParts[@]} - 1)) ]; then
             getCoords ${snakeParts[$bIndex]}
@@ -120,8 +131,10 @@ doSnake () {
     echoChar 0
     
     if [ ${snakeParts[0]} == "$((food[0])),$((food[1]))" ]; then
+        tryWin
         grow
         newFood
+        drawScore
     fi
     
     tput cup $((food[1] + 1)) $((food[0] * 2 + 1))
@@ -130,10 +143,12 @@ doSnake () {
 
 
 clear
-drawFrame   
+drawFrame
+drawScore
 while [ 1 ]; do
     doSnake
+    tput cup $((size + 1)) $((size * 2 + 2))
     
-    read -sd " " -t $(echo "e(-${#snakeParts[@]} / 8) + 0.1" | bc -l) dirs
+    read -sd " " -t $(echo "e(-${#snakeParts[@]} / ($size ^ 2 / 2)) + 0.1" | bc -l) dirs
     setDir $dirs
 done
