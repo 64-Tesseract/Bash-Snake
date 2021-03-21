@@ -4,14 +4,15 @@ IFS="%"
 cd "${0%/*}"
 
 size=$1
-score=0
+score=0  # TODO: Unneeded, just use length of $snakeParts
 food=($((size * 2 / 3)) $((size / 2)))
+snakeRender=0   # 0: Gradient, 1: Striped
 
 declare -A snakeParts   # [index]: x,y
 snakeParts=([0]=2,1 [1]=1,1)
 
 declare -A snakeChars
-snakeChars=([0]="██" [1]="▓▓" [2]="▒▒" [3]="░░")
+snakeChars=([0]="██" [1]="▓▓" [2]="▒▒" [3]="░░" [4]="▒▒")
 
 dir=(1 0)
 
@@ -32,26 +33,32 @@ setDir () {  # $1: w/a/s/d list
             allowedDirs="[w|s|d]"
             ;;
     esac
-    dirs=$(echo $1 | rev | grep -Eo "$allowedDirs" | grep -Eo "^.")
-    ## echo -n "$allowedDirs $dirs"
-    case $dirs in
-        w)
-            dir=(0 -1)
-            ;;
-        a)
-            dir=(-1 0)
-            ;;
-        s)
-            dir=(0 1)
-            ;;
-        d)
-            dir=(1 0)
-            ;;
-    esac
+    dirChar=$(echo $1 | grep -Eo $allowedDirs | tail -1)
+    if ! [[ $dirChar ]]; then return; fi
+    [ $dirChar == "w" ] && dir=(0 -1)
+    [ $dirChar == "a" ] && dir=(-1 0)
+    [ $dirChar == "s" ] && dir=(0 1)
+    [ $dirChar == "d" ] && dir=(1 0)
+}
+
+grow () {
+    snakeParts[${#snakeParts[@]}]=snakeParts[$((${#snakeParts[@]} - 1))]
+}
+
+newFood () {
+    food[0]=$((RANDOM % size))
+    food[1]=$((RANDOM % size))
 }
 
 echoChar () {  # $1: index
-    charID=$(($1 * 3 / (${#snakeParts[@]} - 1)))
+    case $snakeRender in
+        0)
+            charID=$(($1 * 4 / (${#snakeParts[@]})))
+            ;;
+        1)
+            [ $1 -eq 0 ] && charID=0 || charID=$(((($1 - 1) / 2) % 4 + 1))
+            ;;
+    esac
     echo -n ${snakeChars[$charID]}
 }
 
@@ -62,18 +69,18 @@ getCoords () {  # $1: x,y
 
 drawFrame () {
     echo -n "╔"
-    for (( space=0; space <= $((size * 2)); space++ )); do echo -n "═"; done
+    for (( space=0; space < $((size * 2)); space++ )); do echo -n "═"; done
     echo "╗"
     for (( y=0; y < $size; y++ )); do
         echo "║"
     done
     for (( y=0; y < $size; y++ )); do
-        tput cup $((y + 1)) $((size * 2 + 2))
+        tput cup $((y + 1)) $((size * 2 + 1))
         echo -n "║"
     done
     echo
     echo -n "╚"
-    for (( space=0; space <= $((size * 2)); space++ )); do echo -n "═"; done
+    for (( space=0; space < $((size * 2)); space++ )); do echo -n "═"; done
     echo -n "╝"
 }
 
@@ -104,10 +111,20 @@ doSnake () {
     getCoords ${snakeParts[0]}
     x=$((x + dir[0]))
     y=$((y + dir[1]))
+    [ $x -lt 0 ] && x=$((x + size)) || x=$((x % size))
+    [ $y -lt 0 ] && y=$((y + size)) || y=$((y % size))
     snakeParts[0]="$x,$y"
     tput cup $((y + 1)) $((x * 2 + 1))
     ## echo -n "0"${#snakeParts[@]}
     echoChar 0
+    
+    if [ ${snakeParts[0]} == "$((food[0])),$((food[1]))" ]; then
+        grow
+        newFood
+    fi
+    
+    tput cup $((food[1] + 1)) $((food[0] * 2 + 1))
+    echo -n "()"
 }
 
 
@@ -116,6 +133,6 @@ drawFrame
 while [ 1 ]; do
     doSnake
     
-    read -sd "" -t 1 dirs
+    read -sd " " -t 1 dirs
     setDir $dirs
 done
