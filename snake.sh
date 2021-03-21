@@ -160,7 +160,6 @@ doFood
 endGame=0
 until [ $endGame -ne 0 ]; do
     tput cup $((size + 1)) $((size * 2 + 2))
-    [ $(echo ${snakeParts[@]} | grep -Eo ${snakeParts[0]} | wc -l) -ge 2 ] && echo 2 || echo 0
     ## echo ${snakeParts[@]}
     read -sd " " -t $(echo "e(-${#snakeParts[@]} / $size ^ 2) + 0.1" | bc -l) dirs
     setDir $dirs
