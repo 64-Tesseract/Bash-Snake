@@ -5,11 +5,11 @@ cd "${0%/*}"
 stty -echo
 
 size=$1
-food=($((size * 2 / 3)) $((size / 2)))
+food=(0 0)
 snakeRender=0   # 0: Gradient, 1: Striped
 
 declare -A snakeParts   # [index]: x,y
-snakeParts=([0]=2,1 [1]=1,1)
+snakeParts=([0]=1,1 [1]=0,1)
 
 declare -A snakeChars
 snakeChars=([0]="██" [1]="▓▓" [2]="▒▒" [3]="░░" [4]="▒▒")
@@ -70,16 +70,14 @@ getCoords () {  # $1: x,y
     y=$(echo $1 | grep -Eo "[0-9]+$")
 }
 
-tryWin () {
-    if [ ${#snakeParts[@]} -eq $((size * size)) ]; then
-        halfY=$((size / 2 + 1))
-        [ $((halfY - 3)) -lt 1 ] && halfX=1 || halfX=$((halfY - 3))
-        tput cup $halfY $((halfX * 2))
-        echo -n "You Win!"
-        tput cup $((size + 2)) 0
-        stty echo
-        exit
-    fi
+drawWin () {
+    halfY=$((($size + 1) / 2))
+    halfX=$(($size - 3))
+    [ $halfX -lt 1 ] && halfX=1
+    tput cup $halfY $halfX
+    echo -n "You Win!"
+    tput cup $((size + 2)) 0
+    stty echo
 }
 
 drawFrame () {
@@ -100,7 +98,7 @@ drawFrame () {
 }
 
 drawScore () {
-    scoreTxt="╡$((${#snakeParts[@]} - 2))╞"
+    scoreTxt="╡${#snakeParts[@]}/$((size * size))╞"
     spaceCount=$(($size * 2 - ${#scoreTxt} + 1))
     tput cup 0 $spaceCount
     echo $scoreTxt
@@ -129,9 +127,10 @@ doSnake () {
     tput cup $((y + 1)) $((x * 2 + 1))
     ## echo -n "0"${#snakeParts[@]}
     echoChar 0
-    
+}
+
+doFood () {
     if [ ${snakeParts[0]} == "$((food[0])),$((food[1]))" ]; then
-        tryWin
         grow
         newFood
         drawScore
@@ -145,10 +144,15 @@ doSnake () {
 clear
 drawFrame
 drawScore
-while [ 1 ]; do
+newFood
+until [ ${#snakeParts[@]} -eq $((size * size )) ]; do
     doSnake
+    doFood
     tput cup $((size + 1)) $((size * 2 + 2))
     
     read -sd " " -t $(echo "e(-${#snakeParts[@]} / ($size ^ 2 / 2)) + 0.1" | bc -l) dirs
     setDir $dirs
 done
+doSnake
+drawScore
+drawWin
