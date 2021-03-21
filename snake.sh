@@ -1,5 +1,7 @@
 #!/bin/bash
 
+if ! [[ $1 ]]; then echo "Usage: \`snake.sh <board-size>\`"; exit; fi
+
 IFS="%"
 cd "${0%/*}"
 stty -echo
@@ -9,7 +11,7 @@ food=(0 0)
 snakeRender=0   # 0: Gradient, 1: Striped
 
 declare -A snakeParts   # [index]: x,y
-snakeParts=([0]=1,1 [1]=0,1)
+snakeParts=([0]=c1,1c [1]=c0,1c)
 
 declare -A snakeChars
 snakeChars=([0]="██" [1]="▓▓" [2]="▒▒" [3]="░░" [4]="▒▒")
@@ -42,7 +44,7 @@ setDir () {  # $1: w/a/s/d list
 }
 
 grow () {
-    snakeParts[${#snakeParts[@]}]=snakeParts[$((${#snakeParts[@]} - 1))]
+    snakeParts[${#snakeParts[@]}]=${snakeParts[$((${#snakeParts[@]} - 1))]}
 }
 
 newFood () {
@@ -65,17 +67,17 @@ echoChar () {  # $1: index
     echo -n ${snakeChars[$charID]}
 }
 
-getCoords () {  # $1: x,y
-    x=$(echo $1 | grep -Eo "^[0-9]+")
-    y=$(echo $1 | grep -Eo "[0-9]+$")
+getCoords () {  # $1: c`x`,`y`c
+    x=$(echo $1 | grep -Eo "c[0-9]+," | grep -Eo "[0-9]+")
+    y=$(echo $1 | grep -Eo ",[0-9]+c" | grep -Eo "[0-9]+")
 }
 
-drawWin () {
+drawWin () {  # $1: 1 if win, 2 if loss
     halfY=$((($size + 1) / 2))
-    halfX=$(($size - 3))
+    [ $1 -eq 1 ] && halfX=$((size - 3)) || halfX=$((size - 4))
     [ $halfX -lt 1 ] && halfX=1
     tput cup $halfY $halfX
-    echo -n "You Win!"
+    [ $1 -eq 1 ] && echo -n "You Win!" || echo -n "Game Over!"
     tput cup $((size + 2)) 0
     stty echo
 }
@@ -123,14 +125,14 @@ doSnake () {
     y=$((y + dir[1]))
     [ $x -lt 0 ] && x=$((x + size)) || x=$((x % size))
     [ $y -lt 0 ] && y=$((y + size)) || y=$((y % size))
-    snakeParts[0]="$x,$y"
+    snakeParts[0]=c"$x,$y"c
     tput cup $((y + 1)) $((x * 2 + 1))
     ## echo -n "0"${#snakeParts[@]}
     echoChar 0
 }
 
 doFood () {
-    if [ ${snakeParts[0]} == "$((food[0])),$((food[1]))" ]; then
+    if [ ${snakeParts[0]} == "c$((food[0])),$((food[1]))c" ]; then
         grow
         newFood
         drawScore
@@ -144,15 +146,21 @@ doFood () {
 clear
 drawFrame
 drawScore
+doSnake
 newFood
-until [ ${#snakeParts[@]} -eq $((size * size )) ]; do
-    doSnake
-    doFood
+doFood
+endGame=0
+until [ $endGame -ne 0 ]; do
     tput cup $((size + 1)) $((size * 2 + 2))
-    
+    ## echo ${snakeParts[@]}
     read -sd " " -t $(echo "e(-${#snakeParts[@]} / ($size ^ 2 / 2)) + 0.1" | bc -l) dirs
     setDir $dirs
+    
+    doSnake
+    doFood
+    
+    [ ${#snakeParts[@]} -eq $((size * size)) ] && endGame=1
+    [ $(echo "c${snakeParts[@]}c" | grep -Eo ${snakeParts[0]} | wc -l) -ge 2 ] && endGame=2
 done
-doSnake
 drawScore
-drawWin
+drawWin $endGame
