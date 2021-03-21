@@ -2,6 +2,7 @@
 
 IFS="%"
 cd "${0%/*}"
+stty -echo
 
 size=$1
 score=0  # TODO: Unneeded, just use length of $snakeParts
@@ -124,7 +125,7 @@ doSnake () {
     fi
     
     tput cup $((food[1] + 1)) $((food[0] * 2 + 1))
-    echo -n "()"
+    echo -n "◢◣"
 }
 
 
@@ -133,6 +134,6 @@ drawFrame
 while [ 1 ]; do
     doSnake
     
-    read -sd " " -t 1 dirs
+    read -sd " " -t $(echo "e(-${#snakeParts[@]} / 8) + 0.1" | bc -l) dirs
     setDir $dirs
 done
