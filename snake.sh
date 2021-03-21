@@ -1,12 +1,12 @@
 #!/bin/bash
 
-if ! [[ $1 ]]; then size=8; else size=$1; fi
-if ! [[ $2 ]]; then snakeStyle=0; else snakeStyle=$2; fi
-if ! [[ $3 ]]; then loop=1; else loop=$3; fi
-
 IFS="%"
 cd "${0%/*}"
 stty -echo
+
+if ! [[ $1 ]]; then size=8; else size=$1; fi
+if ! [[ $2 ]]; then snakeStyle=0; else snakeStyle=$2; fi
+if ! [[ $3 ]]; then loop=1; else loop=$3; fi
 
 food=(0 0)
 dir=(1 0)
