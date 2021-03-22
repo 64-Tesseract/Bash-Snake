@@ -156,17 +156,14 @@ drawFrame
 drawScore
 doSnake
 newFood
-doFood
 endGame=0
-while [ 1 ]; do
+until [ $endGame -ne 0 ]; do
+    doFood
     tput cup $((size + 1)) $((size * 2 + 2))
     ## echo ${snakeParts[@]}
     read -sd " " -t $(echo "e(-${#snakeParts[@]} / $size ^ 2) + 0.1" | bc -l) dirs
     setDir $dirs
-
     doSnake
-    [ $endGame -ne 0 ] && break
-    doFood
 done
 drawScore
 drawWin $endGame
