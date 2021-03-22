@@ -8,7 +8,7 @@ declare -A optionVals
 optionVals=([2]=8 [1]=0 [0]=0)
 declare -A options
 options=([2,name]="Size"        [2,min]=6   [2,max]=16
-         [1,name]="Snake Style" [1,min]=0   [1,max]=1
+         [1,name]="Snake Style" [1,min]=0   [1,max]=3
          [0,name]="Loop"        [0,min]=0   [0,max]=1
          )
 optionCount=$((${#options[@]} / 3))
