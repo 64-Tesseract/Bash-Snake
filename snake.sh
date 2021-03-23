@@ -1,7 +1,7 @@
 #!/bin/bash
 
 IFS="%"
-cd "${0%/*}"
+# cd "${0%/*}"
 stty -echo
 
 if ! [[ $1 ]]; then size=8; else size=$1; fi
@@ -54,6 +54,8 @@ newFood () {
         food[1]=$((RANDOM % size))
         foodCoords="$((food[0])),$((food[1]))"
     done
+    tput cup $((food[1] + 1)) $((food[0] * 2 + 1))
+    echo -n "◢◣"
 }
 
 echoHead () {
@@ -205,14 +207,12 @@ doSnake () {
 }
 
 doFood () {
-    if [[ ${snakeParts[0]} =~ "c$((food[0])),$((food[1]))," ]]; then  # Respawn food if eaten
+    foodCoords="c$((food[0])),$((food[1])),"
+    if [[ ${snakeParts[0]} =~ $foodCoords ]]; then  # Respawn food if eaten
         grow
         newFood
         drawScore
     fi
-
-    tput cup $((food[1] + 1)) $((food[0] * 2 + 1))
-    echo -n "◢◣"
 }
 
 
